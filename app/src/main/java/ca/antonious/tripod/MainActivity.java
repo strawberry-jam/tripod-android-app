@@ -2,6 +2,7 @@ package ca.antonious.tripod;
 
 import android.Manifest;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -54,12 +55,14 @@ public class MainActivity extends AppCompatActivity {
         cameraApi.capturePhoto().enqueue(new Callback<PhotoCaptureResponse>() {
             @Override
             public void onResponse(Call<PhotoCaptureResponse> call, Response<PhotoCaptureResponse> response) {
-                savePhoto(response.body().getBase64EncodedImage());
+                if (response.isSuccessful()) {
+                    savePhoto(response.body().getBase64EncodedImage());
+                }
             }
 
             @Override
             public void onFailure(Call<PhotoCaptureResponse> call, Throwable t) {
-
+                return;
             }
         });
     }
@@ -77,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 .withListener(new MultiplePermissionsListener() {
                     @Override
                     public void onPermissionsChecked(MultiplePermissionsReport report) {
-                        showMostRecentImage();
+                        observePhotoChanges();
                     }
 
                     @Override
@@ -88,9 +91,20 @@ public class MainActivity extends AppCompatActivity {
                 .check();
     }
 
+    private void observePhotoChanges() {
+        showMostRecentImage();
+        getContentResolver().registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, false, new ContentObserver(null) {
+            @Override
+            public void onChange(boolean selfChange) {
+                super.onChange(selfChange);
+                showMostRecentImage();
+            }
+        });
+    }
+
     private void ensureCameraApi() {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.github.com")
+                .baseUrl("http://172.28.23.119:5000")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -98,10 +112,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showMostRecentImage() {
-        Glide.with(this)
-             .load(Uri.fromFile(new File(getMostRecentPhotoUrl())))
-             .transition(DrawableTransitionOptions.withCrossFade())
-             .into(mostRecentPictureImageView);
+        try {
+            Glide.with(this)
+                    .load(Uri.fromFile(new File(getMostRecentPhotoUrl())))
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(mostRecentPictureImageView);
+        } catch (Exception ex) {
+
+        }
     }
 
     private String getMostRecentPhotoUrl() {
