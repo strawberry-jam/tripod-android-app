@@ -1,6 +1,7 @@
 package ca.antonious.tripod;
 
 import android.Manifest;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -63,7 +64,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @OnClick(R.)
+    @OnClick(R.id.open_gallery_button)
+    protected void openPhotoGallery() {
+        Intent newIntent = new Intent(Intent.ACTION_VIEW);
+        newIntent.setType("image/*");
+        startActivity(newIntent);
+    }
 
     private void ensurePermissions() {
         Dexter.withActivity(this)
