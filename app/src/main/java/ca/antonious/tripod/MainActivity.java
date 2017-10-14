@@ -16,12 +16,8 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
-import com.karumi.dexter.listener.PermissionDeniedResponse;
-import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
-import com.karumi.dexter.listener.single.DialogOnDeniedPermissionListener;
-import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
 import java.util.List;
@@ -30,10 +26,17 @@ import java.util.UUID;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.most_recent_picture) protected ImageView mostRecentPictureImageView;
+
+    private ICameraApi cameraApi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +45,25 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         ensurePermissions();
+        ensureCameraApi();
     }
 
     @OnClick(R.id.take_photo_button)
     protected void onCaptureClicked() {
+        cameraApi.capturePhoto().enqueue(new Callback<PhotoCaptureResponse>() {
+            @Override
+            public void onResponse(Call<PhotoCaptureResponse> call, Response<PhotoCaptureResponse> response) {
+                savePhoto(response.body().getBase64EncodedImage());
+            }
 
+            @Override
+            public void onFailure(Call<PhotoCaptureResponse> call, Throwable t) {
+
+            }
+        });
     }
+
+    @OnClick(R.)
 
     private void ensurePermissions() {
         Dexter.withActivity(this)
@@ -64,6 +80,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .check();
+    }
+
+    private void ensureCameraApi() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.github.com")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        cameraApi = retrofit.create(ICameraApi.class);
     }
 
     private void showMostRecentImage() {
