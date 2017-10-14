@@ -2,13 +2,17 @@ package ca.antonious.tripod;
 
 import android.Manifest;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -21,9 +25,11 @@ import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
 import java.util.List;
+import java.util.UUID;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,6 +42,11 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         ensurePermissions();
+    }
+
+    @OnClick(R.id.take_photo_button)
+    protected void onCaptureClicked() {
+
     }
 
     private void ensurePermissions() {
@@ -58,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private void showMostRecentImage() {
         Glide.with(this)
              .load(Uri.fromFile(new File(getMostRecentPhotoUrl())))
+             .transition(DrawableTransitionOptions.withCrossFade())
              .into(mostRecentPictureImageView);
     }
 
@@ -75,5 +87,11 @@ public class MainActivity extends AppCompatActivity {
                         null, MediaStore.Images.ImageColumns.DATE_TAKEN + " DESC");
         cursor.moveToNext();
         return cursor.getString(1);
+    }
+
+    private void savePhoto(String encodedImage) {
+        byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
+        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+        MediaStore.Images.Media.insertImage(getContentResolver(), decodedByte, UUID.randomUUID().toString(), "from Canon E0S 60D");
     }
 }
